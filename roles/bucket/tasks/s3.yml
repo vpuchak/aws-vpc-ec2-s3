@@ -1,0 +1,8 @@
+---
+- name: Create s3 bucket
+  s3_bucket:
+    name: taskbucket-165345
+    region: us-east-1
+    versioning: no
+    tags:
+      project: task
