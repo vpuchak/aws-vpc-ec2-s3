@@ -1,0 +1,63 @@
+---
+- name: Create new vpc
+  ec2_vpc_net:
+    name: task-vpc
+    cidr_block: 10.0.0.0/16
+    region: '{{ region }}'
+    dns_hostnames: yes
+    dns_support: yes
+    state: present
+    tags:
+      Project: task
+    tenancy: default
+  register: vpc
+  tags:
+    - vpc
+
+- name: Gather facts about vpc
+  ec2_vpc_net_facts:
+    region: '{{ region }}'
+    filters:
+      "tag:Name": task-vpc
+      "tag:Project": task
+  register: vpc
+
+- name: Output content of VPC Facts
+  debug: var=vpc
+
+- set_fact:
+    vpc_id: "{{ vpc.vpcs[0].id }}"
+
+- name: Create igw
+  ec2_vpc_igw:
+    region: '{{ region }}'
+    vpc_id: '{{ vpc_id }}'
+    state: present
+  register: igw
+
+- name: Create subnet for instance
+  ec2_vpc_subnet:
+    state: present
+    region: '{{ region }}'
+    az: '{{ az }}'
+    vpc_id: '{{ vpc_id }}'
+    cidr: 10.0.0.0/28
+    tags:
+      Name: task-subnet
+      Project: task
+#  register: task-subnet
+
+- name: Gather facts about subnets in vpc
+  ec2_vpc_subnet_facts:
+    region: '{{ region }}'
+    filters:
+      vpc-id: '{{ vpc_id }}'
+      "tag:Name": task-subnet
+      "tag:Project": task
+  register: subnet
+
+- name: Output content of Subnet Facts
+  debug: var=subnet
+
+- set_fact:
+    subnet_id: "{{ subnet.subnets[0].id }}"

@@ -1,3 +1,6 @@
 ---
 ec2_access_key: "{{ lookup('env', 'AWS_ACCESS_KEY_ID') }}"
 ec2_secret_key: "{{ lookup('env', 'AWS_SECRET_ACCESS_KEY') }}"
+
+region: us-east-1
+az: us-east-1a
