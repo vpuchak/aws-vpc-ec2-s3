@@ -10,7 +10,7 @@
     tags:
       Project: task
     tenancy: default
-  register: vpc
+#  register: vpc
   tags:
     - vpc
 
@@ -21,10 +21,7 @@
       "tag:Name": task-vpc
       "tag:Project": task
   register: vpc
-
-- name: Output content of VPC Facts
-  debug: var=vpc
-
+- debug: var=vpc
 - set_fact:
     vpc_id: "{{ vpc.vpcs[0].id }}"
 
@@ -33,7 +30,17 @@
     region: '{{ region }}'
     vpc_id: '{{ vpc_id }}'
     state: present
+#  register: igw
+
+- name: Gather facts about IGW
+  ec2_vpc_igw_facts:
+    region: '{{ region }}'
+    filters:
+      attachment.vpc-id: '{{ vpc_id }}'
   register: igw
+- debug: var=igw
+- set_fact:
+    igw_id: "{{ igw.internet_gateways[0].internet_gateway_id }}"
 
 - name: Create subnet for instance
   ec2_vpc_subnet:
@@ -56,8 +63,84 @@
       "tag:Project": task
   register: subnet
 
-- name: Output content of Subnet Facts
-  debug: var=subnet
-
+- debug: var=subnet
 - set_fact:
     subnet_id: "{{ subnet.subnets[0].id }}"
+
+- name: Look for route table
+  ec2_vpc_route_table_facts:
+    region: '{{ region }}'
+    filters:
+      vpc-id: '{{ vpc_id }}'
+      "tag:Name": public-rt
+      "tag:Project": task
+      "tag:Public": yes
+  register: rt
+
+- name: Set up public subnet route table
+  ec2_vpc_route_table:
+    vpc_id: '{{ vpc_id }}'
+    region: '{{ region }}'
+    lookup: id
+    route_table_id: '{{ rt.route_tables[0].id }}'
+    tags:
+      Name: public-rt
+      Public: yes
+      Project: task
+    subnets:
+      - '{{ subnet_id }}'
+    routes:
+      - dest: 0.0.0.0/0
+        gateway_id: "{{ igw_id }}"
+  register: rt
+- debug: var=rt
+- set_fact:
+    rt_id: "{{ rt.route_table.id }}"
+
+
+- name: Create and associate task network ACL with public subnet
+  ec2_vpc_nacl:
+    vpc_id: '{{ vpc_id }}'
+    region: '{{ region }}'
+    name: public-nacl
+    subnets: '{{ subnet_id }}'
+    tags:
+      Project: task
+    ingress: [
+        # rule no, protocol, allow/deny, cidr, icmp_code, icmp_type,
+        #                                             port from, port to
+        [100, 'tcp', 'allow', '0.0.0.0/0', null, null, 22, 22],
+        [200, 'all', 'deny',  '0.0.0.0/0', null, null, null, null] 
+    ]
+    egress: [
+        [100, 'all', 'allow', '0.0.0.0/0', null, null, null, null]
+    ]
+    state: 'present'
+
+- name: Gather facts about network ACLs
+  ec2_vpc_nacl_facts:
+    region: '{{ region }}'
+    filters:
+      vpc-id: '{{ vpc_id }}'
+      "tag:Project": task
+  register: nacl
+- debug: var=nacl
+- set_fact:
+    nacl_id: "{{ nacl.nacls[0].nacl_id }}"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
