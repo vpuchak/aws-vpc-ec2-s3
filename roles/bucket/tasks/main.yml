@@ -1,2 +1,2 @@
 ---
-include: s3.yml
+- include: s3.yml
