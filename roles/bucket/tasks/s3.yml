@@ -3,6 +3,8 @@
   s3_bucket:
     name: taskbucket-165345
     region: us-east-1
+    state: present
     versioning: no
     tags:
       project: task
+  register: s3_bucket
