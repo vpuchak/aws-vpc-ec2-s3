@@ -1,2 +1,2 @@
 ---
-- include: vpc.yml
+- import_tasks: vpc.yml
