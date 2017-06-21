@@ -1,6 +1,6 @@
 ---
 security_groups:
-  - name: task-sg
+  - name: "{{ project }}-sg"
     description: security group for instance
     rules:
       - proto: tcp
