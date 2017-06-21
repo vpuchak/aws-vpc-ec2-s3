@@ -1,0 +1,50 @@
+---
+- name: Create ec2 key if not exists
+  ec2_key:
+    name: "{{ project }}-key"
+    region: "{{ region }}"
+    force: false
+    state: present
+    key_material: "{{ item }}"
+  with_file: "{{ playbook_dir }}/roles/instance/files/id_rsa.pub"
+
+- name: Create ec2 role to access s3 bucket
+  iam_role:
+    region: "{{ region }}"    
+    name: "{{ project }}-role"
+    assume_role_policy_document: "{{ lookup('file','policy.json') }}"
+    state: present
+
+- name: Attach policy to the task-role role
+  iam_policy:
+    region: "{{ region }}"
+    iam_type: role
+    iam_name: "{{ project }}-role"
+    policy_name: s3put
+    state: present
+    policy_json: "{{lookup('template', 's3put.json.j2')}}"
+
+- name: Create ec2 instance
+  ec2:
+    region: "{{ region }}"
+    vpc_subnet_id: "{{ subnet_id }}"
+    exact_count: 1
+    count_tag:
+      Name: "{{ project }}-instance"
+      Project: "{{ project }}"
+    tenancy: default
+    key_name: "{{ project }}-key"
+    group: "{{ project }}-sg"
+    instance_type: "{{ type }}"
+    image: "{{ ami }}"
+    instance_profile_name: "{{ project }}-role"
+    wait: yes
+    wait_timeout: 500
+    ebs_optimized: no
+    instance_tags:
+      Name: "{{ project }}-instance"
+      Project: "{{ project }}"
+    monitoring: no
+    termination_protection: no
+    source_dest_check: true
+    assign_public_ip: yes
