@@ -6,7 +6,7 @@
     force: false
     state: present
     key_material: "{{ item }}"
-  with_file: "{{ lookup('file','id_rsa.pub') }}"
+  with_file: "{{ playbook_dir }}/roles/instance/files/id_rsa.pub"
 
 - name: Create ec2 role to access s3 bucket
   iam_role:
@@ -32,7 +32,6 @@
     count_tag:
       Name: "{{ project }}-instance"
       Project: "{{ project }}"
-    state: present
     tenancy: default
     key_name: "{{ project }}-key"
     group: "{{ project }}-sg"
