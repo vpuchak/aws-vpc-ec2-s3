@@ -8,3 +8,10 @@
       Name: "{{ project }}-instance"
       Project: "{{ project }}"
 
+- name: Delete s3 bucket
+  s3_bucket:
+    name: "{{ s3bucketname }}"
+    region: "{{ region }}"
+    state: absent
+    force: yes
+
