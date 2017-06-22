@@ -9,3 +9,5 @@ cidr:           10.0.0.0/16
 s3bucketname:   taskbucket-165345
 ami:            ami-643b1972
 type:           t2.micro
+ssh_port:       21568
+my_ip:          195.160.232.0/22  # SoftServe main IP range
