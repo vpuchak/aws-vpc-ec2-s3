@@ -16,13 +16,6 @@
 - set_fact:
     vpc_id: "{{ vpc.vpc.id }}"
 
-#- name: Gather facts about vpc
-#  ec2_vpc_net_facts:
-#    region: "{{ region }}"
-#    filters:
-#      "tag:Name": task-vpc
-#      "tag:Project": task
-#  register: vpc
 
 - name: Create igw
   ec2_vpc_igw:
@@ -121,23 +114,3 @@
   with_items: "{{ security_groups }}"
   register: sg
 - debug: var=sg
-#  set_fact:
-#    sg_id: 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
