@@ -1,0 +1,14 @@
+---
+security_groups:
+  - name: "{{ project }}-sg"
+    description: security group for instance
+    rules:
+      - proto: tcp
+        from_port: "{{ ssh_port }}"
+        to_port: "{{ ssh_port }}"
+        cidr_ip: "{{ my_ip }}"
+    rules_egress:
+      - proto: tcp
+        from_port: 443
+        to_port: 443
+        cidr_ip: 0.0.0.0/0

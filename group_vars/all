@@ -1,0 +1,16 @@
+---
+ec2_access_key: "{{ lookup('env', 'AWS_ACCESS_KEY_ID') }}"
+ec2_secret_key: "{{ lookup('env', 'AWS_SECRET_ACCESS_KEY') }}"
+
+project:                      task
+region:                       us-east-1
+az:                           us-east-1a
+cidr:                         10.0.0.0/16
+s3bucketname:                 taskbucket-165345
+ami:                          ami-643b1972
+type:                         t2.micro
+ssh_port:                     21568
+ansible_ssh_port:             "{{ ssh_port }}"
+ansible_ssh_private_key_file: "{{ playbook_dir }}/roles/instance/files/id_rsa"
+ansible_user:                 ec2-user
+my_ip:                        195.160.232.0/22  # SoftServe main IP range

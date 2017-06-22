@@ -1,0 +1,96 @@
+---
+
+- name: Look for subnet
+  ec2_vpc_subnet_facts:
+    region: "{{ region }}"
+    filters:
+      "tag:Name": "{{ project }}-subnet"
+      "tag:Project": "{{ project }}"
+  register: subnet
+- debug: var=subnet
+
+- name: Create ec2 key if not exists
+  ec2_key:
+    name: "{{ project }}-key"
+    region: "{{ region }}"
+    force: false
+    state: present
+    key_material: "{{ item }}"
+  with_file: "{{ playbook_dir }}/roles/instance/files/id_rsa.pub"
+
+- name: Create ec2 role to access s3 bucket
+  iam_role:
+    region: "{{ region }}"    
+    name: "{{ project }}-role"
+    assume_role_policy_document: "{{ lookup('file','policy.json') }}"
+    state: present
+
+- name: Attach policy to the task-role role
+  iam_policy:
+    region: "{{ region }}"
+    iam_type: role
+    iam_name: "{{ project }}-role"
+    policy_name: s3put
+    state: present
+    policy_json: "{{lookup('template', 's3put.json.j2')}}"
+
+- name: Create ec2 instance
+  ec2:
+    region: "{{ region }}"
+    vpc_subnet_id: "{{ subnet.subnets[0].id }}"
+    exact_count: 1
+    count_tag:
+      Name: "{{ project }}-instance"
+      Project: "{{ project }}"
+    tenancy: default
+    key_name: "{{ project }}-key"
+    group: "{{ project }}-sg"
+    instance_type: "{{ type }}"
+    image: "{{ ami }}"
+    instance_profile_name: "{{ project }}-role"
+    wait: yes
+    wait_timeout: 500
+    ebs_optimized: no
+    instance_tags:
+      Name: "{{ project }}-instance"
+      Project: "{{ project }}"
+    monitoring: no
+    user_data: "{{lookup('template', 'user_data.j2')}}"
+    termination_protection: no
+    source_dest_check: true
+    assign_public_ip: yes
+  register: ec2
+- debug: var=ec2
+
+- name: Add new instance to host group
+  add_host:
+    hostname: "{{ item.public_ip }}:{{ ssh_port }}"
+    groupname: launched
+  with_items: "{{ ec2.tagged_instances }}"
+
+- name: Wait for SSH to come up
+  wait_for:
+    host: "{{ item.public_dns_name }}"
+    port: "{{ ssh_port }}"
+    delay: 60
+    timeout: 320
+    state: started
+  with_items: "{{ ec2.tagged_instances }}"
+
+- name: Create script to upload files to s3
+  template:
+    src: upload.sh.j2
+    dest: /home/ec2-user/upload.sh
+    owner: ec2-user
+    group: ec2-user
+    mode: "u=rx,g=rx,o=rx"
+  delegate_to: "{{ item.public_dns_name }}"
+  with_items: "{{ ec2.tagged_instances }}"
+
+- name: Create crontab to upload files to s3
+  cron:
+    name: upload
+    minute: "*/5"
+    job: "/home/ec2-user/upload.sh > /dev/null"
+  delegate_to: "{{ item.public_dns_name }}"
+  with_items: "{{ ec2.tagged_instances }}"

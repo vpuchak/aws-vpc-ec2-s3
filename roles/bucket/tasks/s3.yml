@@ -1,0 +1,10 @@
+---
+- name: Create s3 bucket
+  s3_bucket:
+    name: "{{ s3bucketname }}"
+    region: "{{ region }}"
+    state: present
+    versioning: no
+    tags:
+      project: task
+  register: s3_bucket
