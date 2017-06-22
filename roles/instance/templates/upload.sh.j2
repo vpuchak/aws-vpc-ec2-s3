@@ -1,0 +1,5 @@
+#!/bin/bash
+filename="file-$(date +%F_%R)"
+touch $filename
+aws s3 cp $filename s3://{{ s3bucketname }}
+rm -f $filename
