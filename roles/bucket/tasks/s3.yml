@@ -5,6 +5,7 @@
     region: "{{ region }}"
     state: present
     versioning: no
+    policy: "{{ lookup('template','s3policy.json.j2') }}"
     tags:
       project: task
   register: s3_bucket
