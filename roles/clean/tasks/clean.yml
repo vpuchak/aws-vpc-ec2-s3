@@ -1,0 +1,105 @@
+---
+- name: Delete ec2 instance
+  ec2:
+    region: "{{ region }}"
+    image: "{{ ami }}"
+    exact_count: 0
+    count_tag:
+      Name: "{{ project }}-instance"
+      Project: "{{ project }}"
+
+- name: Delete s3 bucket
+  s3_bucket:
+    name: "{{ s3bucketname }}"
+    region: "{{ region }}"
+    state: absent
+    force: yes
+
+- name: Look up for vpc to delete
+  ec2_vpc_net_facts:
+    region: "{{ region }}"
+    filters:
+      "tag:Name": "{{ project }}-vpc"
+      "tag:Project": "{{ project }}"
+  register: vpc
+- debug: var=vpc
+- set_fact:
+    vpc_id: "{{ vpc.vpcs[0].id }}"
+
+- name: Include security group vars
+  include_vars: ../../instance/vars/main.yml
+
+- name: Delete security group
+  ec2_group:
+    name: "{{ item.name }}"
+    region: "{{ region }}"
+    vpc_id: "{{ vpc_id }}"
+    state: absent
+  with_items: "{{ security_groups }}"
+
+
+- name: Look for rt to delete
+  ec2_vpc_route_table_facts:
+    region: "{{ region }}"
+    filters:
+      "tag:Name": public-rt
+      "tag:Public": yes
+      vpc-id: "{{ vpc_id }}"
+  register: rt
+- debug: var=rt
+
+- name: Delete route table
+  ec2_vpc_route_table:
+    region: "{{ region }}"
+    vpc_id: "{{ vpc.vpcs[0].id }}"
+    lookup: id
+    route_table_id: "{{ rt.route_tables[0].id }}"
+    state: absent
+
+
+- name: Look for endpoint to delete
+  ec2_vpc_endpoint_facts:
+    query: endpoints
+    region: "{{ region }}"
+    filters:
+      vpc-id: "{{ vpc_id }}"
+  register: endpoint
+- debug: var=endpoint
+
+- name: Delete endpoint
+  ec2_vpc_endpoint:
+    state: absent
+    region: "{{ region }}"
+    vpc_id: "{{ vpc_id }}"
+    vpc_endpoint_id: "{{ endpoint.vpc_endpoints[0].vpc_endpoint_id }}"
+
+
+- name: Delete igw
+  ec2_vpc_igw:
+    region: "{{ region }}"
+    vpc_id: "{{ vpc_id }}"
+    state: absent
+
+- name: Delete subnet
+  ec2_vpc_subnet:
+    region: "{{ region }}"
+    az: "{{ az }}"
+    vpc_id: "{{ vpc_id }}"
+    cidr: 10.0.0.0/28
+    state: absent
+
+- name: Delete nacl
+  ec2_vpc_nacl:
+    vpc_id: "{{ vpc_id }}"
+    region: "{{ region }}"
+    name: public-nacl
+    state: absent
+
+- name: Delete vpc
+  ec2_vpc_net:
+    name: "{{ project }}-vpc"
+    cidr_block: "{{ cidr }}"
+    region: "{{ region }}"
+    state: absent
+
+
