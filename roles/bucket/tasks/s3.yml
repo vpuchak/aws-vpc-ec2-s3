@@ -1,4 +1,6 @@
 ---
+# Play to create s3 bucket
+
 - name: Create s3 bucket
   s3_bucket:
     name: "{{ s3bucketname }}"
@@ -9,3 +11,4 @@
     tags:
       project: task
   register: s3_bucket
+  tags: s3
