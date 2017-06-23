@@ -1,4 +1,7 @@
 ---
+# Play to create VPC with subnet, route table, internet gataway, endpoint,
+# network ACL and security group
+
 - name: Create new vpc
   ec2_vpc_net:
     name: "{{ project }}-vpc"
@@ -12,7 +15,6 @@
     tenancy: default
   register: vpc
   tags: vpc
-- debug: var=vpc
 - set_fact:
     vpc_id: "{{ vpc.vpc.id }}"
 
@@ -24,7 +26,6 @@
     state: present
   register: igw
   tags: igw
-- debug: var=igw
 -  set_fact:
     igw_id: "{{ igw.gateway_id }}"
 
@@ -41,7 +42,6 @@
       Project: "{{ project }}"
   register: subnet
   tags: subnet
-- debug: var=subnet
 - set_fact:
     subnet_id: "{{ subnet.subnet.id }}"
 
@@ -60,13 +60,11 @@
         gateway_id: "{{ igw_id }}"
   register: rt
   tags: rt
-- debug: var=rt
 - set_fact:
     rt_id: "{{ rt.route_table.id }}"
-- debug: var=rt_id
 
 
-- name: Create and associate task network ACL with public subnet
+- name: Create and associate NACL with public subnet
   ec2_vpc_nacl:
     vpc_id: "{{ vpc_id }}"
     region: "{{ region }}"
@@ -75,8 +73,6 @@
     tags:
       Project: "{{ project }}"
     ingress: [
-        # rule no, protocol, allow/deny, cidr, icmp_code, icmp_type,
-        #                                             port from, port to
         [100, 'all', 'allow', '0.0.0.0/0', null, null, null, null]
     ]
     egress: [
@@ -85,7 +81,6 @@
     state: present
   register: nacl
   tags: nacl
-- debug: var=nacl
 - set_fact:
     nacl_id: "{{ nacl.nacl_id }}"
   
@@ -100,7 +95,6 @@
     route_table_ids: "{{ rt_id }}"
   register: endpoint
   tags: endpoint
-- debug: var=endpoint
 
 
 - name: Create security group
@@ -113,4 +107,3 @@
     rules_egress: "{{ item.rules_egress }}"
   with_items: "{{ security_groups }}"
   register: sg
-- debug: var=sg
