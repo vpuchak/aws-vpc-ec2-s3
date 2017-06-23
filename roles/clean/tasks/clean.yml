@@ -1,4 +1,6 @@
 ---
+# Play to delete VPC, ec2 instance and s3 bucket
+
 - name: Delete ec2 instance
   ec2:
     region: "{{ region }}"
@@ -7,6 +9,31 @@
     count_tag:
       Name: "{{ project }}-instance"
       Project: "{{ project }}"
+    wait: yes
+
+
+- name: Delete ec2 key
+  ec2_key:
+    name: "{{ project }}-key"
+    region: "{{ region }}"
+    state: absent
+
+
+- name: Delete ec2 role policy
+  iam_policy:
+    region: "{{ region }}"
+    iam_type: role
+    iam_name: "{{ project }}-role"
+    policy_name: s3put
+    state: absent
+
+
+- name: Delete ec2 role
+  iam_role:
+    region: "{{ region }}"    
+    name: "{{ project }}-role"
+    state: absent
+
 
 - name: Delete s3 bucket
   s3_bucket:
@@ -15,6 +42,7 @@
     state: absent
     force: yes
 
+
 - name: Look up for vpc to delete
   ec2_vpc_net_facts:
     region: "{{ region }}"
@@ -22,12 +50,13 @@
       "tag:Name": "{{ project }}-vpc"
       "tag:Project": "{{ project }}"
   register: vpc
-- debug: var=vpc
 - set_fact:
     vpc_id: "{{ vpc.vpcs[0].id }}"
 
+
 - name: Include security group vars
   include_vars: ../../instance/vars/main.yml
+
 
 - name: Delete security group
   ec2_group:
@@ -46,7 +75,7 @@
       "tag:Public": yes
       vpc-id: "{{ vpc_id }}"
   register: rt
-- debug: var=rt
+
 
 - name: Delete route table
   ec2_vpc_route_table:
@@ -64,7 +93,7 @@
     filters:
       vpc-id: "{{ vpc_id }}"
   register: endpoint
-- debug: var=endpoint
+
 
 - name: Delete endpoint
   ec2_vpc_endpoint:
@@ -80,6 +109,7 @@
     vpc_id: "{{ vpc_id }}"
     state: absent
 
+
 - name: Delete subnet
   ec2_vpc_subnet:
     region: "{{ region }}"
@@ -88,12 +118,14 @@
     cidr: 10.0.0.0/28
     state: absent
 
+
 - name: Delete nacl
   ec2_vpc_nacl:
     vpc_id: "{{ vpc_id }}"
     region: "{{ region }}"
     name: public-nacl
     state: absent
+
 
 - name: Delete vpc
   ec2_vpc_net:
