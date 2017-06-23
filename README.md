@@ -1,5 +1,5 @@
 # Description #
-Ansible playbook to create and clean aws enviroment.
+Ansible playbook to create and clean aws environment.
 Playbook creates desired vpc, ec2 instance and s3 bucket.
 Ec2 instance sends test file to s3 bucket every 5 minutes.
 
@@ -9,15 +9,15 @@ Ec2 instance sends test file to s3 bucket every 5 minutes.
  - boto3
 
 # Set up #
-In order to use this paybook you must set following enviroment variables:
+In order to use this paybook you must set following environment variables:
  - AWS_ACCESS_KEY_ID
  - AWS_SECRET_ACCESS_KEY
 
 To install latest ansible (2.4.0) use pip:
- `<pip install git+git://github.com/ansible/ansible.git@devel>`
+ `pip install git+git://github.com/ansible/ansible.git@devel`
 
 To access instance via ssh outside of SoftServe's network - adjust sg rules.
-Also you should put you ssk key-pair to /roles/instance/files/ folder.
+Also you should put your ssk key-pair to /roles/instance/files/ folder.
 
 # Architecture #
 ![Architecture](/images/architecture.png)
@@ -25,3 +25,4 @@ Also you should put you ssk key-pair to /roles/instance/files/ folder.
 # Known Issues #
 - Issue with route table creation - creates every time when playbook runs
 - Cannot map endpoint ot NACL's outbound rules.
+- Don't know which port to allow in NACL inbound rules to have access to S3 through endpoint
