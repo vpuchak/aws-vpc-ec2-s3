@@ -13,4 +13,4 @@ ssh_port:                     21568
 ansible_ssh_port:             "{{ ssh_port }}"
 ansible_ssh_private_key_file: "{{ playbook_dir }}/roles/instance/files/id_rsa"
 ansible_user:                 ec2-user
-my_ip:                        195.160.232.0/22  # SoftServe main IP range
+my_ip:                        # Put your IP range here
