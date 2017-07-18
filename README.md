@@ -16,8 +16,7 @@ In order to use this paybook you must set following environment variables:
 To install latest ansible (2.4.0) use pip:
  `pip install git+git://github.com/ansible/ansible.git@devel`
 
-To access instance via ssh outside of SoftServe's network - adjust sg rules.
-Also you should put your ssk key-pair to /roles/instance/files/ folder.
+You should put your ssk key-pair to /roles/instance/files/ folder.
 
 # Architecture #
 ![Architecture](/images/architecture.png)
